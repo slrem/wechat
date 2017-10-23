@@ -42,13 +42,16 @@ func LogUserActive() wechat.Middleware {
 //文本消息处理
 func textHandler(c wechat.Context) (err error) {
   	log.Println(c.Request().Content()) //用户发送来的文本消息
+
+    //do somethings
+    ...
     return c.Response().Text(c.Request().Content())
 }
 
 //关注事件处理
 func subscribeHandler(c wechat.Context) (err error) {
-	err = response(c.Wechat().AppID, c.Request().Content(), c.Request().MsgType(), c)
-	return
+
+	return c.Response().Text("欢迎关注[微笑]")
 }
 
 //取消关注事件处理
@@ -59,7 +62,7 @@ func unsubscribeHandler(c wechat.Context) (err error) {
 //菜单处理事件
 func clickMenuHandler(c wechat.Context) (err error) {
   key:=c.Request().EventKey()
-	return  c.Response().Text(key)
+	return  c.Response().Image(mediaid)
 }
 
 func main()  {
