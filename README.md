@@ -6,7 +6,7 @@
 
 
 
-    $ go get github.com/PuerkitoBio/goquery
+    $ go get github.com/slrem/wechat
 
 
 ## Examples 1
