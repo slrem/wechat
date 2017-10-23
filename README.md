@@ -143,6 +143,7 @@ func main() {
   t.CreateMenu(menustr)
 
 //获取粉丝openid
+
 	f, _ := t.GetFans("")
 	for _,v:=range f{
     log.Println(v)
@@ -157,7 +158,7 @@ func main() {
 
 //主动发送消息
   t.SendImageMsg("openid", mediaid)
-  
+
 //群发消息 tagid为0 表示发给全部，其他的为发给属于标签id的所有用户
 t.SendTextAll(tagid, "这是群发消息")
 
