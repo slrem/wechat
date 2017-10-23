@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"strings"
 )
 
 //上传图文消息内的图片获取URL【订阅号与服务号认证后均可用】
@@ -73,16 +74,24 @@ func (t *Trader) UploadNews(articles []NewsArticle) (mediaId string, err error) 
 	}
 	surl := MediaURL + "uploadnews?access_token=" + t.Accesstoken
 	b, err := t.PostJson(surl, string(str))
-	m := make(map[string]string)
-	err = json.Unmarshal(b, &m)
 	if err != nil {
 		return
 	}
-	if _, ok := m["media_id"]; ok {
-		mediaId = m["media_id"]
-	} else {
+	if strings.Contains(string(b), "errcode") {
 		err = errors.New(string(b))
+		return
 	}
+	var r struct {
+		Type    string `json:"type"`
+		MediaId string `json:"media_id"`
+		CreatAt int    `json:"created_at"`
+	}
+
+	err = json.Unmarshal(b, &r)
+	if err != nil {
+		return
+	}
+	mediaId = r.MediaId
 	return
 }
 

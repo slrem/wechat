@@ -138,7 +138,7 @@ type (
 		ThumbMediaId       string `json:"thumb_media_id"`
 		Author             string `json:"author"`
 		Digest             string `json:"digest"`
-		ShowCoverPic       string `json:"show_cover_pic"`
+		ShowCoverPic       int    `json:"show_cover_pic"`
 		Content            string `json:"content"`
 		ContentSourceUrl   string `json:content_source_url`
 		NeedOpenComment    int    `json:"need_open_comment"`
