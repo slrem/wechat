@@ -1,75 +1,95 @@
-# goquery - a little like that j-thing, only in Go [![build status](https://secure.travis-ci.org/PuerkitoBio/goquery.png)](http://travis-ci.org/PuerkitoBio/goquery) [![GoDoc](https://godoc.org/github.com/PuerkitoBio/goquery?status.png)](http://godoc.org/github.com/PuerkitoBio/goquery)
+# wecaht - 一个小型的微信公众号api
 
-goquery brings a syntax and a set of features similar to [jQuery][] to the [Go language][go]. It is based on Go's [net/html package][html] and the CSS Selector library [cascadia][]. Since the net/html parser returns nodes, and not a full-featured DOM tree, jQuery's stateful manipulation functions (like height(), css(), detach()) have been left off.
-
-Also, because the net/html parser requires UTF-8 encoding, so does goquery: it is the caller's responsibility to ensure that the source document provides UTF-8 encoded HTML. See the [wiki][] for various options to do this.
-
-Syntax-wise, it is as close as possible to jQuery, with the same function names when possible, and that warm and fuzzy chainable interface. jQuery being the ultra-popular library that it is, I felt that writing a similar HTML-manipulating library was better to follow its API than to start anew (in the same spirit as Go's `fmt` package), even though some of its methods are less than intuitive (looking at you, [index()][index]...).
+你可以快速搭建一个订阅号/服务号应用，支持被动回复，主动回复，设置菜单，素材管理，用户管理
 
 ## Installation
 
-Please note that because of the net/html dependency, goquery requires Go1.1+.
+
 
     $ go get github.com/PuerkitoBio/goquery
 
-(optional) To run unit tests:
 
-    $ cd $GOPATH/src/github.com/PuerkitoBio/goquery
-    $ go test
+## Examples1
 
-(optional) To run benchmarks (warning: it runs for a few minutes):
+被动回复 可以和web框架配合使用
+以echo为例
 
-    $ cd $GOPATH/src/github.com/PuerkitoBio/goquery
-    $ go test -bench=".*"
+```Go
+package main
 
-## Changelog
+import (
+  "fmt"
+  "log"
+  "github.com/labstack/echo"
+  "github.com/slrem/wechat"
+)
 
-**Note that goquery's API is now stable, and will not break.**
+  //错误处理
+  func ErrorHandler(err error, c wechat.Context) error {
+  		return c.Response().Success()
+  }
 
-*    **2016-06-15** : Invalid selector strings internally compile to a `Matcher` implementation that never matches any node (instead of a panic). So for example, `doc.Find("~")` returns an empty `*Selection` object.
-*    **2016-02-02** : Add `NodeName` utility function similar to the DOM's `nodeName` property. It returns the tag name of the first element in a selection, and other relevant values of non-element nodes (see godoc for details). Add `OuterHtml` utility function similar to the DOM's `outerHTML` property (named `OuterHtml` in small caps for consistency with the existing `Html` method on the `Selection`).
-*    **2015-04-20** : Add `AttrOr` helper method to return the attribute's value or a default value if absent. Thanks to [piotrkowalczuk][piotr].
-*    **2015-02-04** : Add more manipulation functions - Prepend* - thanks again to [Andrew Stone][thatguystone].
-*    **2014-11-28** : Add more manipulation functions - ReplaceWith*, Wrap* and Unwrap - thanks again to [Andrew Stone][thatguystone].
-*    **2014-11-07** : Add manipulation functions (thanks to [Andrew Stone][thatguystone]) and `*Matcher` functions, that receive compiled cascadia selectors instead of selector strings, thus avoiding potential panics thrown by goquery via `cascadia.MustCompile` calls. This results in better performance (selectors can be compiled once and reused) and more idiomatic error handling (you can handle cascadia's compilation errors, instead of recovering from panics, which had been bugging me for a long time). Note that the actual type expected is a `Matcher` interface, that `cascadia.Selector` implements. Other matcher implementations could be used.
-*    **2014-11-06** : Change import paths of net/html to golang.org/x/net/html (see https://groups.google.com/forum/#!topic/golang-nuts/eD8dh3T9yyA). Make sure to update your code to use the new import path too when you call goquery with `html.Node`s.
-*    **v0.3.2** : Add `NewDocumentFromReader()` (thanks jweir) which allows creating a goquery document from an io.Reader.
-*    **v0.3.1** : Add `NewDocumentFromResponse()` (thanks assassingj) which allows creating a goquery document from an http response.
-*    **v0.3.0** : Add `EachWithBreak()` which allows to break out of an `Each()` loop by returning false. This function was added instead of changing the existing `Each()` to avoid breaking compatibility.
-*    **v0.2.1** : Make go-getable, now that [go.net/html is Go1.0-compatible][gonet] (thanks to @matrixik for pointing this out).
-*    **v0.2.0** : Add support for negative indices in Slice(). **BREAKING CHANGE** `Document.Root` is removed, `Document` is now a `Selection` itself (a selection of one, the root element, just like `Document.Root` was before). Add jQuery's Closest() method.
-*    **v0.1.1** : Add benchmarks to use as baseline for refactorings, refactor Next...() and Prev...() methods to use the new html package's linked list features (Next/PrevSibling, FirstChild). Good performance boost (40+% in some cases).
-*    **v0.1.0** : Initial release.
+//中间件
+func LogUserActive() wechat.Middleware {
+  	return func(next wechat.Handler) wechat.Handler {
+  		return func(c wechat.Context) error {
+        log.Println(c.Request().FromUserName())
+  			return next(c)
+  		}
+  	}
+  }
 
-## API
+//文本消息处理
+func textHandler(c wechat.Context) (err error) {
+  	log.Println(c.Request().Content()) //用户发送来的文本消息
+    return c.Response().Text(c.Request().Content())
+}
 
-goquery exposes two structs, `Document` and `Selection`, and the `Matcher` interface. Unlike jQuery, which is loaded as part of a DOM document, and thus acts on its containing document, goquery doesn't know which HTML document to act upon. So it needs to be told, and that's what the `Document` type is for. It holds the root document node as the initial Selection value to manipulate.
+//关注事件处理
+func subscribeHandler(c wechat.Context) (err error) {
+	err = response(c.Wechat().AppID, c.Request().Content(), c.Request().MsgType(), c)
+	return
+}
 
-jQuery often has many variants for the same function (no argument, a selector string argument, a jQuery object argument, a DOM element argument, ...). Instead of exposing the same features in goquery as a single method with variadic empty interface arguments, statically-typed signatures are used following this naming convention:
+//取消关注事件处理
+func unsubscribeHandler(c wechat.Context) (err error) {
+	return c.Response().Success() //不做处理
+}
 
-*    When the jQuery equivalent can be called with no argument, it has the same name as jQuery for the no argument signature (e.g.: `Prev()`), and the version with a selector string argument is called `XxxFiltered()` (e.g.: `PrevFiltered()`)
-*    When the jQuery equivalent **requires** one argument, the same name as jQuery is used for the selector string version (e.g.: `Is()`)
-*    The signatures accepting a jQuery object as argument are defined in goquery as `XxxSelection()` and take a `*Selection` object as argument (e.g.: `FilterSelection()`)
-*    The signatures accepting a DOM element as argument in jQuery are defined in goquery as `XxxNodes()` and take a variadic argument of type `*html.Node` (e.g.: `FilterNodes()`)
-*    The signatures accepting a function as argument in jQuery are defined in goquery as `XxxFunction()` and take a function as argument (e.g.: `FilterFunction()`)
-*    The goquery methods that can be called with a selector string have a corresponding version that take a `Matcher` interface and are defined as `XxxMatcher()` (e.g.: `IsMatcher()`)
+//菜单处理事件
+func clickMenuHandler(c wechat.Context) (err error) {
+  key:=c.Request().EventKey()
+	return  c.Response().Text(key)
+}
 
-Utility functions that are not in jQuery but are useful in Go are implemented as functions (that take a `*Selection` as parameter), to avoid a potential naming clash on the `*Selection`'s methods (reserved for jQuery-equivalent behaviour).
+func main()  {
+  w,_:=	w, err := wechat.New(
+  		"appID", //公众号appid
+  		"appsecret", //公众号appsecret
+  		"token", //公众号设置的token
+  		"encodingAESKey" //公众号加密钥匙
+      )
 
-The complete [godoc reference documentation can be found here][doc].
 
-Please note that Cascadia's selectors do not necessarily match all supported selectors of jQuery (Sizzle). See the [cascadia project][cascadia] for details. Invalid selector strings compile to a `Matcher` that fails to match any node. Behaviour of the various functions that take a selector string as argument follows from that fact, e.g. (where `~` is an invalid selector string):
+  w.WechatErrorHandler = ErrorHandler
 
-* `Find("~")` returns an empty selection because the selector string doesn't match anything.
-* `Add("~")` returns a new selection that holds the same nodes as the original selection, because it didn't add any node (selector string didn't match anything).
-* `ParentsFiltered("~")` returns an empty selection because the selector string doesn't match anything.
-* `ParentsUntil("~")` returns all parents of the selection because the selector string didn't match any element to stop before the top element.
+  w.Use(LogUserActive()) // 记录活跃时间
 
-## Examples
+  w.Text(textHandler)
+  w.SubscribeEvent(subscribeHandler)
+  w.UnsubscribeEvent(unsubscribeHandler)
+  w.MenuClickEvent(clickMenuHandler)
 
-See some tips and tricks in the [wiki][].
+  e.Any("/wechat/:app", func(c echo.Context) (err error) {
+    w.Server(c.Response(), c.Request())
+  }
+}
 
-Adapted from example_test.go:
+
+```
+
+## Examples2
+
 
 ```Go
 package main
@@ -78,43 +98,63 @@ import (
   "fmt"
   "log"
 
-  "github.com/PuerkitoBio/goquery"
+  "github.com/slrem/wechat"
 )
 
-func ExampleScrape() {
-  doc, err := goquery.NewDocument("http://metalsucks.net")
-  if err != nil {
-    log.Fatal(err)
+func main() {
+	w, err := wechat.New(
+		"appID", //公众号appid
+		"appsecret", //公众号appsecret
+		"token", //公众号设置的token
+		"encodingAESKey" //公众号加密钥匙
+    )  
+
+	t := w.Trader() //获取一个操作器
+	//创建菜单
+  menustr:=`{
+     "button":[
+     {
+          "type":"click",
+          "name":"今日歌曲",
+          "key":"V1001_TODAY_MUSIC"
+      },
+      {
+           "name":"菜单",
+           "sub_button":[
+           {
+               "type":"view",
+               "name":"搜索",
+               "url":"http://www.soso.com/"
+            },
+            {
+                 "type":"miniprogram",
+                 "name":"wxa",
+                 "url":"http://mp.weixin.qq.com",
+                 "appid":"wx286b93c14bbf93aa",
+                 "pagepath":"pages/lunar/index"
+             },
+            {
+               "type":"click",
+               "name":"赞一下我们",
+               "key":"V1001_GOOD"
+            }]
+       }]
+ }`
+  t.CreateMenu(menustr)
+//获取粉丝openid
+	f, _ := t.GetFans("")
+	for _,v:=range f{
+    log.Println(v)
   }
 
-  // Find the review items
-  doc.Find(".sidebar-reviews article .content-block").Each(func(i int, s *goquery.Selection) {
-    // For each item found, get the band and title
-    band := s.Find("a").Text()
-    title := s.Find("i").Text()
-    fmt.Printf("Review %d: %s - %s\n", i, band, title)
-  })
-}
+//主动发送消息
+  t.SendTextMsg("openid", "你好")
+//添加一个图片素材
+  b,_:=toutil.ReadFile("image.jpg")
+  mediaid,url,err:=t.AddImageMaterial(b)
+//主动发送消息
+  t.SendImageMsg("openid", mediaid)
+//群发消息 tagid为0 表示发给全部，其他的为发给属于标签id的所有用户
+t.SendTextAll(tagid, "这是群发消息")
 
-func main() {
-  ExampleScrape()
-}
 ```
-
-## License
-
-The [BSD 3-Clause license][bsd], the same as the [Go language][golic]. Cascadia's license is [here][caslic].
-
-[jquery]: http://jquery.com/
-[go]: http://golang.org/
-[cascadia]: https://github.com/andybalholm/cascadia
-[bsd]: http://opensource.org/licenses/BSD-3-Clause
-[golic]: http://golang.org/LICENSE
-[caslic]: https://github.com/andybalholm/cascadia/blob/master/LICENSE
-[doc]: http://godoc.org/github.com/PuerkitoBio/goquery
-[index]: http://api.jquery.com/index/
-[gonet]: https://github.com/golang/net/
-[html]: http://godoc.org/golang.org/x/net/html
-[wiki]: https://github.com/PuerkitoBio/goquery/wiki/Tips-and-tricks
-[thatguystone]: https://github.com/thatguystone
-[piotr]: https://github.com/piotrkowalczuk
