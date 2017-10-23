@@ -9,7 +9,7 @@
     $ go get github.com/PuerkitoBio/goquery
 
 
-## Examples1
+## Examples 1
 
 被动回复 可以和web框架配合使用
 以echo为例
@@ -88,7 +88,7 @@ func main()  {
 
 ```
 
-## Examples2
+## Examples 2
 
 
 ```Go
