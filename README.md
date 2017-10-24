@@ -66,7 +66,7 @@ func clickMenuHandler(c wechat.Context) (err error) {
 }
 
 func main()  {
-  w,_:=	w, err := wechat.New(
+  w, err := wechat.New(
   		"appID", //公众号appid
   		"appsecret", //公众号appsecret
   		"token", //公众号设置的token
