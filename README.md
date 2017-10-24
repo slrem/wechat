@@ -83,11 +83,13 @@ func main()  {
   w.UnsubscribeEvent(unsubscribeHandler)
   w.MenuClickEvent(clickMenuHandler)
 
+  e := echo.New()
   e.Any("/wechat/:app", func(c echo.Context) (err error) {
     w.Server(c.Response(), c.Request())
   }
 }
 
+e.Start(":8080")
 
 ```
 
