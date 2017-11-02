@@ -47,7 +47,7 @@ const (
 	ServiceType
 )
 
-func New(appID, appSecret, token, encodingAESKey string) (w *Wechat, err error) {
+func New(appID, appSecret, token, encodingAESKey string, h trader.Handler) (w *Wechat, err error) {
 	w = &Wechat{
 		AppID:      appID,
 		AppSecret:  appSecret,
@@ -55,7 +55,7 @@ func New(appID, appSecret, token, encodingAESKey string) (w *Wechat, err error) 
 		router:     NewRouter(),
 		WechatType: 1,
 	}
-	t, err := trader.NewTrader(w.AppID, w.AppSecret)
+	t, err := trader.NewTrader(w.AppID, w.AppSecret, h)
 	if err != nil {
 		return
 	}

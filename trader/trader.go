@@ -14,23 +14,34 @@ import (
 )
 
 type Trader struct {
-	AppId       string
-	AppSecret   string
-	Accesstoken string
-	ExpiresIn   int64
-	mtx         sync.Mutex
+	AppId              string
+	AppSecret          string
+	Accesstoken        string
+	ExpiresIn          int64
+	mtx                sync.Mutex
+	AccessTokenHandler Handler
 }
+type Handler func() (AccessToken, error)
 
-func NewTrader(appid, appsecret string) (t *Trader, err error) {
+func NewTrader(appid, appsecret string, h Handler) (t *Trader, err error) {
 	t = &Trader{
-		AppId:     appid,
-		AppSecret: appsecret,
+		AppId:              appid,
+		AppSecret:          appsecret,
+		AccessTokenHandler: h,
 	}
-	err = t.GetAccessToken()
+	a, err := t.GetAccessToken()
+	t.mtx.Lock()
+	t.Accesstoken, t.ExpiresIn = a.Access_token, a.Expires_in+time.Now().Unix()
+	t.mtx.Unlock()
 	return
 }
 
-func (t *Trader) GetAccessToken() (err error) {
+func (t *Trader) GetAccessToken() (a AccessToken, err error) {
+	h := t.AccessTokenHandler
+	if h != nil {
+		a, err = h()
+		return
+	}
 	surl := AccessTokenURL + t.AppId + "&secret=" + t.AppSecret
 	res, err := http.Get(surl)
 	if err != nil {
@@ -41,7 +52,7 @@ func (t *Trader) GetAccessToken() (err error) {
 	if err != nil {
 		return
 	}
-	var a AccessToken
+
 	err = json.Unmarshal(b, &a)
 	if err != nil {
 		return
@@ -51,15 +62,16 @@ func (t *Trader) GetAccessToken() (err error) {
 		return
 	}
 
-	t.mtx.Lock()
-	t.Accesstoken, t.ExpiresIn = a.Access_token, a.Expires_in+time.Now().Unix()
-	t.mtx.Unlock()
 	return
 }
 
 func (t *Trader) CheckAccessTokenLive() (err error) {
+	var a AccessToken
 	if time.Now().Unix() > t.ExpiresIn-300 {
-		err = t.GetAccessToken()
+		a, err = t.GetAccessToken()
+		t.mtx.Lock()
+		t.Accesstoken, t.ExpiresIn = a.Access_token, a.Expires_in+time.Now().Unix()
+		t.mtx.Unlock()
 	}
 	return
 }
