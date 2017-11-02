@@ -66,6 +66,10 @@ func (t *Trader) GetAccessToken() (a AccessToken, err error) {
 }
 
 func (t *Trader) CheckAccessTokenLive() (err error) {
+	h := t.AccessTokenHandler
+	if h != nil {
+		return
+	}
 	var a AccessToken
 	if time.Now().Unix() > t.ExpiresIn-300 {
 		a, err = t.GetAccessToken()
