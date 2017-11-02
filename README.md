@@ -70,7 +70,8 @@ func main()  {
   		"appID", //公众号appid
   		"appsecret", //公众号appsecret
   		"token", //公众号设置的token
-  		"encodingAESKey" //公众号加密钥匙
+  		"encodingAESKey", //公众号加密钥匙
+      nil
       )
 
 
@@ -111,7 +112,8 @@ func main() {
 		"appID", //公众号appid
 		"appsecret", //公众号appsecret
 		"token", //公众号设置的token
-		"encodingAESKey" //公众号加密钥匙
+		"encodingAESKey", //公众号加密钥匙
+    nil
     )  
 
 	t := w.Trader() //获取一个操作器
