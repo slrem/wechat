@@ -199,7 +199,7 @@ type UserInfo struct {
 	Subscribe     int    `json:"subscribe"`
 	Openid        string `json:"openid"`
 	NickName      string `json:"nickname"`
-	Sex           string `json:"sex"`
+	Sex           int    `json:"sex"`
 	Language      string `json:"language"`
 	City          string `json:"city"`
 	Province      string `json:"province"`
