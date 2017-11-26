@@ -14,12 +14,14 @@ import (
 )
 
 type Trader struct {
-	AppId              string
-	AppSecret          string
-	Accesstoken        string
-	ExpiresIn          int64
-	mtx                sync.Mutex
-	AccessTokenHandler Handler
+	AppId                string
+	AppSecret            string
+	Accesstoken          string
+	ExpiresIn            int64
+	JsapiTicket          string
+	JsapiTicketExpiresIn int64
+	mtx                  sync.Mutex
+	AccessTokenHandler   Handler
 }
 type Handler func() (AccessToken, error)
 
