@@ -82,6 +82,17 @@ func (t *Trader) CheckAccessTokenLive() (err error) {
 	return
 }
 
+func (t *Trader) FlushAccessToken() (err error) {
+	a, err := t.GetAccessToken()
+	if err != nil {
+		return
+	}
+	t.mtx.Lock()
+	t.Accesstoken = a.Access_token
+	t.mtx.Unlock()
+	return
+}
+
 func (t *Trader) upload(materialtype string, data []byte, title, introduction string) (mediaId, url string, err error) {
 	err = t.CheckAccessTokenLive()
 	if err != nil {
