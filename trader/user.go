@@ -319,8 +319,7 @@ func (t *Trader) GetUserInfo(openid string) (user UserInfo, err error) {
 	if err != nil {
 		return
 	}
-	var r Res
-	err = json.Unmarshal(b, &r)
+	err = json.Unmarshal(b, &user)
 	if err != nil {
 		return
 	}
