@@ -323,7 +323,7 @@ func (t *Trader) GetUserInfo(openid string) (user UserInfo, err error) {
 	if err != nil {
 		return
 	}
-	if r.ErrCode != 0 {
+	if user.Openid == "" {
 		err = errors.New(string(b))
 	}
 	return
