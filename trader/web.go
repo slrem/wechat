@@ -55,7 +55,7 @@ func (t *Trader) httpGetJsapi_ticket() (err error) {
 		err = errors.New(string(b))
 		return
 	}
-	t.SetJsapiTicket(jt.Ticket, jt.Expires_in)
+	t.SetJsapiTicket(jt.Ticket, jt.Expires_in+time.Now().Unix())
 	return
 }
 

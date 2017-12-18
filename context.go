@@ -51,9 +51,9 @@ type Response interface {
 	Text(content string) error
 	Image(mediaID string) error
 	Voice(mediaID string) error
-	// Video(video Video) error
-	// Music(music Music) error
-	// Article(articles ...ArticleItem) error
+	Video(video Video) error
+	Music(music Music) error
+	Article(articles ...ArticleItem) error
 }
 
 type context struct {
